@@ -1,0 +1,47 @@
+# SLURM execution profile.
+#   snakemake --profile profiles/slurm --configfile config/config.yaml
+#
+# IMPORTANT: a single un-scattered crosscheck requests crosscheck_threads (128) >
+# the 88-CPU node max, so it will never schedule. On the cluster set scatter mode in
+# config/config.yaml, e.g.:  crosscheck: {scatter_chunk: 32, chunk_threads: 16, chunk_gb: 64}
+#
+# Per-rule mem_mb / runtime / threads are declared in the rules and flow to SLURM
+# automatically (threads->cpus_per_task, mem_mb->--mem, runtime->--time). Here we
+# only assign a partition per rule (and override runtime/mem for the light, rule-less
+# steps so they land on short partitions).
+executor: slurm
+software-deployment-method:
+  - conda
+conda-frontend: mamba
+conda-base-path: /zata/zippy/ramirezc/Miniforge3   # lets compute nodes activate the per-rule envs
+conda-prefix: .conda                               # stable, shared env cache (matches profiles/default)
+
+jobs: 100            # max concurrent SLURM jobs (not a core count)
+
+# Set the workflow config flag core_check=false (the local-cores oversubscription
+# warning is meaningless under SLURM). This is a workflow config value, so it goes
+# through --config, not a bare profile key.
+config:
+  - "core_check=false"
+
+default-resources:
+  slurm_partition: "12hours"
+  slurm_extra: "--cpu-freq=High-High:Performance"
+  runtime: 60m
+  mem_mb: 4000
+  cpus_per_task: 1
+
+set-resources:
+  extract_fingerprint:   {slurm_partition: "4hours", constraint: cascadelake}   # rule: runtime 120, mem ~6 GB, 1 cpu
+  reheader_index:        {slurm_partition: "30mins"}                       # rule: runtime 30, mem 2 GB, 1 cpu
+  crosscheck_chunk_map:  {slurm_partition: "30mins", runtime: 10m, mem_mb: 2000}
+  crosscheck_chunk:      {slurm_partition: "12hours", runtime: 720m, constraint: cascadelake}  # mem/cpus from rule (chunk_gb / chunk_threads)
+  crosscheck_gather:     {slurm_partition: "30mins", runtime: 30m, mem_mb: 8000}
+  aggregate:             {slurm_partition: "4hours", runtime: 60m, mem_mb: 16000}
+  cases:                 {slurm_partition: "30mins", runtime: 30m, mem_mb: 8000}
+
+rerun-incomplete: true
+# keep-going: true
+slurm-requeue: false
+printshellcmds: true
+latency-wait: 60

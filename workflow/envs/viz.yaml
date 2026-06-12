@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - polars=1.9
+  - networkx
+  - bokeh
+  - pydot     # python wrapper used by nx.nx_pydot.graphviz_layout
+  - graphviz  # provides the `sfdp` layout binary

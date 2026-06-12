@@ -1,0 +1,22 @@
+# crosscheck-smk: Picard-fingerprinting sample-swap / relatedness analysis across
+# WGS, ATAC-seq, WGBS and RNA-seq.
+#
+# Stages: manifest (pre-flight script) -> per-sample fingerprint (per map) ->
+# pairwise crosschecks (scatter-gather) -> aggregate -> cases. See config/config.yaml
+# and README.md.
+
+
+include: "rules/common.smk"
+include: "rules/fingerprint.smk"
+include: "rules/crosscheck.smk"
+include: "rules/aggregate.smk"
+include: "rules/cases.smk"
+
+
+rule all:
+    input:
+        all_fingerprints(),
+        "results/combined.parquet",
+        "results/cross_participant.tsv",
+        "results/cases.tsv",
+        "results/cases",

@@ -1,0 +1,14 @@
+# Default execution profile. Use with: snakemake --profile profiles/default
+software-deployment-method:
+  - conda
+conda-frontend: mamba
+conda-prefix: .conda   # stable, shared env cache (same as profiles/slurm)
+printshellcmds: true
+retries: 3
+keep-going: true
+rerun-incomplete: true
+
+cores: 128
+default-resources:
+  mem_mb: 2048
+  runtime: 60

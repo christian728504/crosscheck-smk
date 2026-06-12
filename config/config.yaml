@@ -1,0 +1,63 @@
+# crosscheck-smk configuration.
+# Paths are relative to the working directory (the project root), which is where
+# snakemake is invoked from.
+
+# Manifest produced by the pre-flight script workflow/scripts/construct_manifest.py.
+manifest: results/manifest.parquet
+
+reference:
+  # The .fai index is referenced in rules as fasta + ".fai".
+  fasta: resources/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+
+# Logical map name -> path in resources/.
+haplotype_maps:
+  full: resources/hg38_chr.map
+  filtered: resources/hg38_chr.filtered.map
+  coding_exons: resources/hg38_chr.coding_exons.map
+
+# Data-model where the GCP-Upload dataset.*/sample.* TSVs live (used by the
+# pre-flight manifest script only).
+data_model_dir: /data/projects/mohd/reference/GCP-Upload
+
+# Samples (entity:dataset_id) to drop from the manifest, e.g. known-corrupt inputs.
+# Honored by the pre-flight construct_manifest.py.
+exclude_samples:
+  - MOHD_EB100091   # corrupt WGBS BAM (invalid BGZF block ~27MB offset); regenerate upstream
+
+# Modality label (exactly as it appears in the manifest's data_modality column)
+# -> output subdir. The extraction haplotype map is NOT set here; it is the
+# crosscheck_map of each comparison (a sample is extracted once per map it feeds).
+modalities:
+  WGS:        {subdir: wgs}
+  "ATAC-seq": {subdir: atac}
+  WGBS:       {subdir: wgbs}
+  "RNA-seq":  {subdir: rna}
+
+# Pairwise crosscheck jobs. `modalities` is [LEFT, RIGHT] for a cross comparison, or
+# [A] for a self comparison (A x A). crosscheck_map is the haplotype map for this
+# comparison and is used for BOTH extraction of its samples and the crosscheck, so
+# block representatives align exactly (no dropout). Both modalities are extracted
+# with this map -> e.g. WGS is extracted once per distinct map across all jobs.
+crosscheck_jobs:
+  wgs_atac: {modalities: ["WGS", "ATAC-seq"], crosscheck_map: full}
+  wgs_wgbs: {modalities: ["WGS", "WGBS"],     crosscheck_map: filtered}
+  wgs_rna:  {modalities: ["WGS", "RNA-seq"],  crosscheck_map: coding_exons}
+  # Self comparisons (within-modality, A x A) — uncomment to enable:
+  # wgs_self:  {modalities: ["WGS"],      crosscheck_map: full}
+  # atac_self: {modalities: ["ATAC-seq"], crosscheck_map: full}
+
+# Java heap (GiB) for ExtractFingerprint.
+heaps:
+  extract_gb: 4
+
+# Scatter-gather of the pairwise crosscheck. The LEFT modality of each job is split
+# into chunks of `scatter_chunk` samples; each chunk runs against ALL of RIGHT, then
+# the per-chunk TSVs are concatenated into crosscheck_{job}.tsv.
+crosscheck:
+  scatter_chunk: 22   # LEFT-modality samples per chunk (required, positive int)
+  chunk_threads: 22   # --NUM_THREADS per chunk
+  chunk_gb: 64        # java heap (GiB) per chunk
+  # Keep chunk_count * chunk_threads <= --cores so a wave of chunks runs in parallel.
+
+# LOD below which a pair is called a mismatch.
+lod_threshold: -5.0

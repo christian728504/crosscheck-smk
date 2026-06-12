@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # Picard from bioconda (bundles its own JDK + the `picard` launcher). Pinned to the
+  # version validated for this workflow's CrosscheckFingerprints --SECOND_INPUT usage.
+  - picard=3.4.0

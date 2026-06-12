@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - polars=1.9
+  - pyarrow=17  # parquet read/write backend for polars
