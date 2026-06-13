@@ -16,7 +16,9 @@ manifest (pre-flight)            results/manifest.parquet
       per map)                    -> results/fingerprints/{map}/{modality}/{id}.vcf.gz
         └─ crosscheck            Picard CrosscheckFingerprints, LEFT(INPUT) × RIGHT(SECOND_INPUT)
              └─ aggregate        results/combined.parquet, results/cross_participant.tsv
-                  └─ cases       results/cases.tsv + results/cases/case_{n}.html
+                  └─ cases       results/cases.tsv + results/cases/case_{n}.html  (checkpoint)
+                       └─ pair_lod   results/pair_lod/{comparison}/{left}~{right}.parquet
+                                     (per-block LOD Δ for each flagged pair)
 ```
 
 ## Layout
@@ -25,9 +27,9 @@ manifest (pre-flight)            results/manifest.parquet
 config/config.yaml              # samples come from the manifest; tunables live here
 workflow/
   Snakefile                     # includes + rule all
-  rules/{common,fingerprint,crosscheck,aggregate,cases}.smk
-  envs/{picard,bcftools,polars,viz}.yaml   # per-rule conda envs
-  scripts/{construct_manifest,write_sample_map,gather_crosscheck,aggregate,build_cases}.py
+  rules/{common,fingerprint,crosscheck,aggregate,cases,pair_lod}.smk
+  envs/{picard,bcftools,polars,viz,snp_prioritization}.yaml   # per-rule conda envs
+  scripts/{construct_manifest,write_sample_map,gather_crosscheck,aggregate,build_cases,pair_lod}.py
 profiles/
   default/config.yaml           # local execution (also the auto-applied workflow profile)
   slurm/config.yaml             # SLURM execution
@@ -107,6 +109,11 @@ solves the conda envs; pre-build them with `--conda-create-envs-only`.
   conflict with, annotated with `SUBGRAPH_ID`.
 - `cases/case_{n}.html` — one interactive Bokeh graph per connected component
   (nodes labelled by participant, hover shows the MOHD accession).
+- `pair_lod/{comparison}/{left}~{right}.parquet` — per-haplotype-block LOD
+  contributions (`chrom, pos, name, maf, delta`) for each flagged (`UNEXPECTED_*`)
+  pair in `cases.tsv`, via `snp-prioritization`'s `pair_lod` (`Σ delta == LOD_SCORE`).
+  Fanned out by a checkpoint on `cases` (the pair set is unknown until `cases.tsv`
+  exists); rank by `delta` to find the blocks driving a swap call.
 
 ## Notes
 

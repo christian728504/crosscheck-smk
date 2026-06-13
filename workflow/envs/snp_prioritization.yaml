@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      # Decomposes Picard's CrosscheckFingerprints LOD into per-haplotype-block
+      # contributions; pulls its own deps (numpy, numba, oxbow, polars).
+      - git+https://github.com/christian728504/snp-priortization.git

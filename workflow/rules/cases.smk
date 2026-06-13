@@ -3,7 +3,10 @@
 # conflict with, and one interactive Bokeh graph per connected component.
 
 
-rule cases:
+# `checkpoint` (not `rule`) so the DAG is re-evaluated after cases.tsv exists: the
+# downstream per-pair pair_lod fan-out (rules/pair_lod.smk) enumerates its outputs
+# from the flagged rows in cases.tsv, which are unknown at parse time.
+checkpoint cases:
     input:
         combined="results/combined.parquet",
         manifest=config["manifest"],

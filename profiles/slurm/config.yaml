@@ -39,6 +39,8 @@ set-resources:
   crosscheck_gather:     {slurm_partition: "30mins", runtime: 30m, mem_mb: 8000}
   aggregate:             {slurm_partition: "4hours", runtime: 60m, mem_mb: 16000}
   cases:                 {slurm_partition: "30mins", runtime: 30m, mem_mb: 8000}
+  pair_lod_block:        {slurm_partition: "30mins", runtime: 20m, mem_mb: 4000}
+  pair_lod_all:          {slurm_partition: "30mins", runtime: 10m, mem_mb: 2000}
 
 rerun-incomplete: true
 # keep-going: true

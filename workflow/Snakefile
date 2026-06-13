@@ -11,6 +11,7 @@ include: "rules/fingerprint.smk"
 include: "rules/crosscheck.smk"
 include: "rules/aggregate.smk"
 include: "rules/cases.smk"
+include: "rules/pair_lod.smk"
 
 
 rule all:
@@ -20,3 +21,4 @@ rule all:
         "results/cross_participant.tsv",
         "results/cases.tsv",
         "results/cases",
+        "results/pair_lod/.done",
