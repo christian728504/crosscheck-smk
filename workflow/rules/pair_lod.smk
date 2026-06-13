@@ -1,9 +1,10 @@
-# Per-block LOD decomposition for the flagged sample pairs (checkpoint fan-out).
+# Per-block LOD decomposition for the sample pairs in cases.tsv (checkpoint fan-out).
 #
-# `cases` is a checkpoint: the set of flagged pairs is only known once cases.tsv
-# exists, so the number of per-pair parquets is dynamic. For each UNEXPECTED_* row in
-# cases.tsv we run snp_prioritization.pair_lod on that pair's two fingerprint VCFs and
-# the job's haplotype map, writing the per-block deltas to
+# `cases` is a checkpoint: the set of pairs it keeps is only known once cases.tsv
+# exists, so the number of per-pair parquets is dynamic. For every row in cases.tsv
+# (UNEXPECTED_* flags and the EXPECTED_MATCH rows they conflict with) we run
+# snp_prioritization.pair_lod on that pair's two fingerprint VCFs and the job's
+# haplotype map, writing the per-block deltas to
 # results/pair_lod/{job}/{left}~{right}.parquet (pair identity is in the path).
 
 
@@ -40,12 +41,12 @@ rule pair_lod_block:
         "../scripts/pair_lod.py"
 
 
-def flagged_pair_parquets(wildcards):
-    # Force `cases` to run, then enumerate one parquet per flagged (UNEXPECTED_*) pair.
+def case_pair_parquets(wildcards):
+    # Force `cases` to run, then enumerate one parquet per pair in cases.tsv -- every
+    # comparison it kept (the UNEXPECTED_* flags AND the EXPECTED_MATCH rows they
+    # conflict with), so the block-level evidence is available for both sides.
     tsv = checkpoints.cases.get().output.tsv
-    df = pl.read_csv(tsv, separator="\t").filter(
-        pl.col("RESULT").str.starts_with("UNEXPECTED_")
-    )
+    df = pl.read_csv(tsv, separator="\t")
     return sorted(
         {
             f"results/pair_lod/{r['COMPARISON']}/{r['LEFT_GROUP_VALUE']}~{r['RIGHT_GROUP_VALUE']}.parquet"
@@ -56,6 +57,6 @@ def flagged_pair_parquets(wildcards):
 
 rule pair_lod_all:
     input:
-        flagged_pair_parquets,
+        case_pair_parquets,
     output:
         touch("results/pair_lod/.done"),

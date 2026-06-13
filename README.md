@@ -18,7 +18,7 @@ manifest (pre-flight)            results/manifest.parquet
              └─ aggregate        results/combined.parquet, results/cross_participant.tsv
                   └─ cases       results/cases.tsv + results/cases/case_{n}.html  (checkpoint)
                        └─ pair_lod   results/pair_lod/{comparison}/{left}~{right}.parquet
-                                     (per-block LOD Δ for each flagged pair)
+                                     (per-block LOD Δ for each pair in cases.tsv)
 ```
 
 ## Layout
@@ -110,10 +110,11 @@ solves the conda envs; pre-build them with `--conda-create-envs-only`.
 - `cases/case_{n}.html` — one interactive Bokeh graph per connected component
   (nodes labelled by participant, hover shows the MOHD accession).
 - `pair_lod/{comparison}/{left}~{right}.parquet` — per-haplotype-block LOD
-  contributions (`chrom, pos, name, maf, delta`) for each flagged (`UNEXPECTED_*`)
-  pair in `cases.tsv`, via `snp-prioritization`'s `pair_lod` (`Σ delta == LOD_SCORE`).
-  Fanned out by a checkpoint on `cases` (the pair set is unknown until `cases.tsv`
-  exists); rank by `delta` to find the blocks driving a swap call.
+  contributions (`chrom, pos, name, maf, delta`) for every pair in `cases.tsv` (the
+  `UNEXPECTED_*` flags and the `EXPECTED_MATCH` rows they conflict with), via
+  `snp-prioritization`'s `pair_lod` (`Σ delta == LOD_SCORE`). Fanned out by a
+  checkpoint on `cases` (the pair set is unknown until `cases.tsv` exists); rank by
+  `delta` to find the blocks driving a swap call.
 
 ## Notes
 
